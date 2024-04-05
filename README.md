@@ -2,4 +2,6 @@
 
 ## Data wrangling and visualization with Tidyverse
 
-### Natalia Umanskz (UZH)
+### Natalia Umansky (UZH)
+
+Please find data, scripts, and slides in this repo.
