@@ -1,0 +1,1348 @@
+---
+title: "University of Lucerne<br> Digital Methods"
+subtitle: "Data wrangling and <br>visualization with tidyverse"
+output: 
+  xaringan::moon_reader:
+    css:
+      - default
+      - css/lexis.css
+      - css/lexis-fonts.css
+    lib_dir: libs
+    seal: false
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      slideNumberFormat: "%current%<br>"
+      ratio: "16:9"
+    includes:
+      after_body: "collapseoutput.js"
+---
+layout: true
+
+<style>
+.onehundredtwenty {
+  font-size: 120%;
+   }
+
+<style>
+.ninety {
+  font-size: 90%;
+   }
+
+.eightyfive {
+  font-size: 85%;
+   }
+   
+.eighty {
+  font-size: 80%;
+   }
+   
+.seventyfive {
+  font-size: 75%;
+   }
+   
+.seventy {
+  font-size: 70%;
+   }
+   
+.fifty {
+  font-size: 50%;
+   }
+   
+.forty {
+  font-size: 40%;
+   }
+</style>
+
+
+```{r meta, echo=FALSE, warning = F, message=F}
+library(metathis)
+meta() %>%
+  meta_general(
+    description = "Data wrangling",
+    generator = "xaringan and remark.js"
+  ) %>%
+  meta_name("github-repo" = "nataliaumansky/xxx") %>%
+  meta_social(
+    title = "Data wrangling",
+    url = "nataliaumansky.github.io",
+    og_type = "website",
+    og_author = "Natalia Umansky",
+    twitter_card_type = "summary_large_image",
+    twitter_creator = "@NataliaUmansky"
+  )
+```
+
+```{r setup, include=FALSE}
+# dateWritten <- format(as.Date('2020-05-04'), format="%B %d %Y")
+workshop_day <- format(as.Date("2024-04-27"), format="%B %d %Y")
+pacman::p_load(tidyverse, fontawesome, tidyverse, knitr)
+
+options(
+    htmltools.dir.version = FALSE,
+    knitr.table.format = "html",
+    knitr.kable.NA = ""
+)
+knitr::opts_chunk$set(
+    warning = FALSE,
+    message = FALSE,
+    fig.path = "figs/",
+    fig.width = 7.252,
+    fig.height = 4,
+    comment = "#>",
+    fig.retina = 3 # Better figure resolution
+)
+# Enables the ability to show all slides in a tile overview by pressing "o"
+xaringanExtra::use_tile_view()
+xaringanExtra::use_panelset()
+xaringanExtra::use_clipboard()
+# xaringanExtra::use_share_again()
+# xaringanExtra::style_share_again(share_buttons = "all")
+xaringanExtra::use_extra_styles(
+  hover_code_line = TRUE,
+  mute_unhighlighted_code = FALSE
+)
+# xaringanExtra::use_webcam()
+
+
+knitr::opts_chunk$set(warning = F, message = F) # Whether to display errors
+```
+
+
+---
+name: title-slide
+class: primary
+
+
+#.fira[`r rmarkdown::metadata$title`] 
+
+###.fancy[`r rmarkdown::metadata$subtitle`]
+
+
+<br>
+
+
+
+Natalia Umansky <br> .small[University of Zurich]
+
+[`r fa(name = "twitter", fill = "black")` @NataliaUmansky](http://twitter.com/NataliaUmansky)<br>
+[`r fa(name = "github", fill = "black")` @NataliaUmansky](http://github.com/NataliaUmansky)<br>
+[`r fa(name = "link", fill = "black")` nataliaumansky.github.io](http://nataliaumansky.github.io)
+
+
+`r workshop_day`
+
+.fifty[Link to slides: [nataliaumansky.github.io/data_wrangling_2](https://nataliaumansky.github.io/data_wrangling_2)]
+
+---
+## .fancy[Schedule]
+
+|When?                           | What?                              | 
+|:-------------------------------|-----------------------------------:|
+|9:30 - 10:30                    |Revision & presentations                           |
+|10:30 - 10:45                   |Coffee break                        |
+|10:45 - 12:15                   |Data visualization with `ggplot2` I |
+|12:15 - 13:15                   |Lunch                               |
+|13:15 - 14:45                   |Data visualization with `ggplot2` II|
+|14:45 - 15:00                   |Coffee break                        |
+    
+---
+class: primary
+
+## What is ggplot2?
+
+
+
+
+
+.pull-left[
+An R package that is part of the `tidyverse` specifically designed for the creation of plots 
+]
+
+
+
+---
+class: secondary
+
+
+
+
+---
+## Data: `palmerpenguins` R package
+
+Contains size measurements for three penguin species observed on three islands in the Palmer Archipelago, Antarctica.
+
+
+|species | body_mass_g| bill_length_mm|sex    |
+|:-------|-----------:|--------------:|:------|
+|Adelie  |        3750|           39.1|male   |
+|Adelie  |        3800|           39.5|female |
+|Adelie  |        3250|           40.3|female |
+|Adelie  |        3450|           36.7|female |
+|Adelie  |        3650|           39.3|male   |
+|Adelie  |        3625|           38.9|female |
+
+
+---
+class: center, middle
+## So.. what's the gg in `ggplot2`?
+
+<br>
+
+#`ggplot2` is the .fancy[**g**rammar of **g**raphics **plot**]... 
+
+
+---
+## .fancy[Grammar of Graphics]
+
+* "Grammar of graphics is a tool that enables us to concisely describe the components of a graphic" .orange[.small[The Grammar of Graphics by Leland Wilkinson]]
+
+
+* Proposed an idea of building up a graphic from multiple "layers of data" 
+
+
+* "Layers" implemented in `ggplot2` (with some tweaks and expansion on the concept)
+
+---
+class: tertiary
+
+---
+## .fancy[Grammar of Graphics] - Essentials
+
+
+.pull-left[
+**Data**
+
+```r
+library(tidyverse)
+
+ggplot( )
+```
+]
+
+.pull-right[
+`ggplot()` requires your data to be 'tidy'
+* Every variable has a column
+* Every observation has a row
+]
+
+---
+## .fancy[Grammar of Graphics] - Essentials
+
+
+.pull-left[
+**Data**
+
+```r
+library(tidyverse)
+
+ggplot(data = penguins)
+
+penguins %>% 
+  ggplot()
+```
+]
+
+.pull-right[
+`ggplot()` requires your data to be 'tidy'
+* Every variable has a column
+* Every observation has a row
+]
+
+---
+
+## .fancy[Grammar of Graphics] - Essentials
+
+.leftcol55[
+
+```r
+library(tidyverse)
+
+ggplot(data = penguins)
+```
+]
+
+.rightcol45[
+```{r, echo=FALSE}
+penguins <- read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv")
+
+
+ggplot(data = penguins)
+```
+]
+
+---
+
+## .fancy[Grammar of Graphics] - Essentials
+
+.leftcol55[
+**Mapping**
+
+```r
+library(tidyverse)
+
+ggplot(data = penguins) +
+aes(x = , 
+    y = )
+```
+]
+
+.rightcol45[
+Crosswalk between variables in the dataset and how they are visualized in the plot
+
+]
+
+---
+## .fancy[Grammar of Graphics] - Essentials
+
+.leftcol55[
+**Mapping**
+
+```r
+library(janitor)
+library(tidyverse)
+
+penguins %>% #data
+clean_names() %>% #clean variable names
+ggplot() + #creating plot object
+  aes(x = body_mass_g, y = flipper_length_mm) #mapping
+```
+]
+
+.rightcol45[
+Crosswalk between variables in the dataset and how they are visualized in the plot
+* .red[X] = body mass g; 
+* .red[Y] = flipper length mm; 
+]
+
+---
+
+## .fancy[Grammar of Graphics] - Essentials
+
+.leftcol55[
+**Mapping**
+
+```r
+library(janitor)
+library(tidyverse)
+
+penguins %>% #data
+clean_names() %>% #clean variable names
+ggplot() + #creating plot object
+  aes(x = body_mass_g, y = flipper_length_mm) #mapping
+```
+]
+
+.rightcol45[
+Crosswalk between variables in the dataset and how they are visualized in the plot
+* .red[X] = body mass g; 
+* .red[Y] = flipper length mm; 
+
+```{r, echo=FALSE}
+penguins <- read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv")
+
+library(janitor)
+library(tidyverse)
+penguins %>% 
+clean_names() %>% 
+ggplot() +
+  aes(x = body_mass_g, 
+    y = flipper_length_mm)
+```
+]
+
+---
+
+## .fancy[Grammar of Graphics] - Essentials
+
+.pull-left[
+**Geometric Object**
+
+```r
+geom_*()
+```
+]
+
+.pull-right[
+Controls the type of plot you create
+
+* `geom_point()` = scatter plot
+
+* `geom_line()` = line plot
+
+* `geom_col()` or `geom_bar()` = bar graph
+
+...**and more**!!!
+]
+
+---
+
+## .fancy[Grammar of Graphics] - Essentials
+
+.leftcol55[
+**Geometric Object**
+
+```r
+library(janitor)
+library(tidyverse)
+
+penguins %>% #data
+clean_names() %>% #clean variable names
+ggplot() + #creating plot object
+  aes(x = body_mass_g, y = flipper_length_mm) #mapping
+    geom_point() #geometric object   
+```
+]
+
+.rightcol45[
+
+<br>
+
+```{r, echo=FALSE, out.height='170%', out.width='130%', fig.pos="bottom"}
+penguins <- read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv")
+
+library(janitor)
+library(tidyverse)
+penguins %>% 
+clean_names() %>% 
+ggplot() +
+  aes(x = body_mass_g, y = flipper_length_mm) +
+    geom_point()   
+```
+
+]
+
+
+---
+
+<center>
+
+.font180[.fancy[Now it's your turn to write some R code!]]
+
+<br><br>
+
+<br>
+
+<img src="https://media1.tenor.com/images/72bf7922ac0b07b2f7f8f630e4ae01d2/tenor.gif?itemid=11364811" style="width: 50%"/>
+</center>
+
+---
+
+
+.pull-left[
+
+.font100[.fira[Task 1]]
+
+.font60[Load the `tidyverse` and `janitor` packages.
+
+> If `tidyverse` or `janitor` packages are not installed yet (it will
+> say `[package] not found`). Your first task, is then to install them.
+> Note: this might take you a little bit of time.]
+
+<br>
+
+.font100[.fira[Task 2]]
+
+.font60[Read in the already cleaned `palmerpenguins` data set using
+
+* `read_csv`
+* the following URL:
+    [https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins.csv](https://raw.githubusercontent.com/allisonhorst/palmerpenguins/master/inst/extdata/penguins.csv)
+
+Assign the resulting data to `penguins`.
+
+]]
+
+.pull-right[
+
+.font100[.fira[Task 3]]
+
+.font60[Create a lineplot with .red[x = body_mass_g], <br> .red[y = flipper_length_mm]]
+
+.font100[.fira[Task 4]]
+
+.font60[Create a barplot with .red[x = species], .red[y = body_mass_g. .red[Hint] you might need to use geom_col()]]
+
+]
+
+---
+class: spoiler
+---
+
+###Solution
+
+.pull-left[
+
+.code50[
+```{r, out.height='170%', out.width='130%', fig.pos="bottom"}
+penguins <- read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv")
+
+library(janitor)
+library(tidyverse)
+penguins %>% 
+clean_names() %>% 
+ggplot() +
+  aes(x = body_mass_g, y = flipper_length_mm) +
+    geom_line()   
+```
+
+]]
+
+.pull-right[
+.code50[
+```{r,  out.height='170%', out.width='130%', fig.pos="bottom"}
+penguins <- read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv")
+
+library(janitor)
+library(tidyverse)
+penguins %>% 
+clean_names() %>% 
+ggplot() +
+  aes(x = species, y = body_mass_g) +
+    geom_col()   
+```
+
+]]
+
+---
+## .fancy[Grammar of Graphics] - Essentials
+
+.leftcol55[
+**Mapping + Geometric Object**
+
+```r
+# Method 1 
+ggplot(data = penguins,
+       aes(x = body_mass_g, 
+           y = bill_length_mm))
+       
+# Method 2
+ggplot(data = penguins) +
+  geom_point(aes(x = body_mass_g, 
+           y = bill_length_mm))
+
+# Method 3
+ggplot() +
+  geom_point(data = penguins,
+         aes(x = body_mass_g, 
+           y = bill_length_mm))
+```
+]
+
+.rightcol45[
+.font90[
+**Method 1**: Best when using one data set and one aesthetic mapping
+
+**Method 2**: Best when using one data set, and multiple geoms + aesthetic mappings
+
+**Method 3**: Best when using multiple data sets, and multiple geoms + aesthetic mappings
+]]
+
+---
+
+## .fancy[Grammar of Graphics] - Essentials
+
+.leftcol55[
+**Geometric Object**
+
+```r
+library(janitor)
+library(tidyverse)
+
+penguins %>% #data
+clean_names() %>% #clean variable names
+ggplot() + #creating plot object
+  aes(x = body_mass_g, y = flipper_length_mm) #mapping
+    geom_point() #geometric object   
+```
+]
+
+.rightcol45[
+Understands the following aesthetics
+.font90[
+* x
+* y
+* alpha
+* colour
+* fill
+* shape
+* size
+* etc.
+]]
+
+
+---
+
+## .fancy[Grammar of Graphics] - Essentials
+
+.leftcol55[
+**Geometric Object**
+
+```r
+library(janitor)
+library(tidyverse)
+
+penguins %>% #data
+clean_names() %>% #clean variable names
+ggplot() + #creating plot object
+  aes(x = body_mass_g, y = flipper_length_mm,
+      colour = sex) #mapping
+    geom_point() #geometric object   
+```
+]
+
+.rightcol45[
+
+Add another dimension to the plot by using `colour = `
+
+```{r, echo=FALSE, out.height='170%', out.width='130%', fig.pos="bottom"}
+penguins <- read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv")
+
+library(janitor)
+library(tidyverse)
+penguins %>% 
+clean_names() %>% 
+ggplot() +
+  aes(x = body_mass_g, y = flipper_length_mm, colour=sex) +
+    geom_point()
+```
+
+]
+
+---
+
+## .fancy[Grammar of Graphics] - Essentials
+
+.leftcol55[
+**Geometric Object**
+
+```r
+library(janitor)
+library(tidyverse)
+
+penguins %>% #data
+clean_names() %>% #clean variable names
+ggplot() + #creating plot object
+  aes(x = body_mass_g, y = flipper_length_mm) #mapping
+    geom_point(aes(shape = as.factor(sex))) #geometric object   
+```
+]
+
+.rightcol45[
+
+Change the shape of the scatter plot, by using `aes()` ans `shape=`
+
+```{r, echo=FALSE, out.height='170%', out.width='130%', fig.pos="bottom"}
+penguins <- read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv")
+
+library(janitor)
+library(tidyverse)
+penguins %>% 
+clean_names() %>% 
+ggplot() +
+  aes(x = body_mass_g, y = flipper_length_mm) +
+    geom_point(aes(shape = as.factor(sex)))
+```
+
+]
+
+---
+
+## .fancy[Grammar of Graphics] - Essentials
+
+.leftcol55[
+**Geometric Object**
+
+```r
+library(janitor)
+library(tidyverse)
+
+penguins %>% #data
+clean_names() %>% #clean variable names
+ggplot() + #creating plot object
+  aes(x = body_mass_g, y = flipper_length_mm) #mapping
+    geom_point(colour = "blue") #geometric object   
+```
+]
+
+.rightcol45[
+
+Map an aesthetic to a fixed value, by calling it .red[outside] of `aes()`
+
+```{r, echo=FALSE, out.height='170%', out.width='130%', fig.pos="bottom"}
+penguins <- read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv")
+
+library(janitor)
+library(tidyverse)
+penguins %>% 
+clean_names() %>% 
+ggplot() +
+  aes(x = body_mass_g, y = flipper_length_mm) +
+    geom_point(colour = "blue")
+```
+
+]
+
+---
+
+## .fancy[Grammar of Graphics] - Essentials
+
+.leftcol55[
+**Geometric Object**
+
+```r
+library(janitor)
+library(tidyverse)
+
+penguins %>% #data
+clean_names() %>% #clean variable names
+ggplot() + #creating plot object
+  aes(x = body_mass_g, y = flipper_length_mm) + #mapping
+    geom_point(shape = 21,
+            colour = "blue",
+            fill = "red") #geometric object   
+```
+]
+
+.rightcol45[
+
+For shapes (or geoms) that have a border you can make the border (`colour`) and the inside (`fill`) different colors. 
+
+```{r, echo=FALSE, out.height='170%', out.width='130%', fig.pos="bottom"}
+penguins <- read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv")
+
+library(janitor)
+library(tidyverse)
+penguins %>% 
+clean_names() %>% 
+ggplot() +
+  aes(x = body_mass_g, y = flipper_length_mm) +
+    geom_point(shape = 21,
+            colour = "blue",
+            fill = "red")
+```
+
+]
+
+---
+
+
+class: center, middle, inverse
+
+## Exercise
+
+---
+.pull-left[
+.font150[.fira[Task 5]]
+
+.font60[Within the same plot, create a scatter plot AND a smoothed line
+
+.red[Hint] you will need to first use `geom_point()` and then `geom_smooth()`]
+
+.font150[.fira[Task 6]]
+
+.font60[Recreate the previous plot and this time color the scatter plot by sex]]
+
+.pull-right[
+
+.font150[.fira[Task 7]]
+
+.font60[Repeat .fira[Task 6] but this time remove all observations that have `sex = NA`
+
+.red[Hint] you might want to use some of the `tidyverse`functions we discussed yesterday
+]]
+
+---
+class: spoiler
+
+---
+### Solution
+
+.pull-left[
+
+.code50[
+```{r, out.height='170%', out.width='130%', fig.pos="bottom"}
+penguins <- read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv")
+
+library(janitor)
+library(tidyverse)
+penguins %>% 
+clean_names() %>% 
+ggplot() +
+  aes(x = body_mass_g, y = flipper_length_mm) +
+    geom_point(aes(colour = as.factor(sex)))+
+  geom_smooth()
+```
+
+]]
+
+.pull-right[
+.code50[
+```{r,  out.height='170%', out.width='130%', fig.pos="bottom"}
+penguins <- read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv")
+
+library(janitor)
+library(tidyverse)
+penguins %>% 
+clean_names() %>%
+filter(!is.na(sex)) %>% 
+ggplot() +
+  aes(x = body_mass_g, y = flipper_length_mm) +
+    geom_point(aes(colour = as.factor(sex)))+
+  geom_smooth()  
+```
+
+]]
+
+---
+class: lunch
+
+---
+## .fancy[Grammar of Graphics] - Essentials
+
+.leftcol55[
+**Labels**
+
+```r
+library(janitor)
+library(tidyverse)
+
+penguins %>% #data
+clean_names() %>% #clean variable names
+ggplot() + #creating plot object
+  aes(x = body_mass_g, y = flipper_length_mm) + #mapping
+    geom_point(colour = "blue") + #geometric object 
+    xlab("Body Mass (g)") +
+    ylab("Bill Length (mm)")
+```
+]
+
+.rightcol45[
+
+You can change the labels of the axes, as well as modify the limits of the axes.  
+
+This is done by using:
+* `xlab()` and `ylab()` to change the labels
+* `xlim()` and `ylim()` to change the limits
+
+.font60[.gray[Note this can also be done by using `labs()` - to be covered later!]]]
+
+---
+## .fancy[Grammar of Graphics] - Essentials
+
+.leftcol55[
+**Labels**
+
+```r
+library(janitor)
+library(tidyverse)
+
+g <- penguins %>% #data
+clean_names() %>% #clean variable names
+ggplot() + #creating plot object
+  aes(x = body_mass_g, y = flipper_length_mm) + #mapping
+    geom_point(colour = "blue")  #geometric object 
+
+
+g + xlab("Body Mass (g)") +
+    ylab("Bill Length (mm)")
+
+```
+]
+
+.rightcol45[
+
+You can change the labels of the axes, as well as modify the limits of the axes.  
+
+This is done by using:
+* `xlab()` and `ylab()` to change the labels
+* `xlim()` and `ylim()` to change the limits
+
+.font60[.gray[Note this can also be done by using `labs()` - to be covered later!]]]
+
+---
+## .fancy[Grammar of Graphics] - Facets 
+
+.pull-left[
+
+Generates small multiples that each show a different subset of the data
+Alternative to aesthetics for displaying additional categorical/discrete variables
+
+Two `facet_*()` options:
+
+`facet_grid()` and `facet_wrap()`]
+
+.pull-right[
+
+```{r, echo=FALSE, out.height='170%', out.width='130%', fig.pos="bottom"}
+penguins <- read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv")
+
+library(janitor)
+library(tidyverse)
+penguins %>% 
+clean_names() %>% 
+ggplot() +
+  aes(x = body_mass_g, y = flipper_length_mm) +
+    geom_point(shape = 21,
+            colour = "blue",
+            fill = "red")+
+  facet_wrap(~species)
+```
+
+
+]
+
+---
+
+## .fancy[Grammar of Graphics] - Facets 
+
+.leftcol40[
+
+Generates small multiples that each show a different subset of the data
+Alternative to aesthetics for displaying additional categorical/discrete variables
+
+Two `facet_*()` options:
+
+`facet_grid()` and `facet_wrap()`]
+
+.rightcol60[
+
+
+
+```r
+
+g + facet_wrap(~species)
+
+```
+
+```{r, echo=FALSE, out.height='170%', out.width='130%', fig.pos="bottom"}
+penguins <- read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv")
+
+library(janitor)
+library(tidyverse)
+penguins %>% 
+clean_names() %>% 
+ggplot() +
+  aes(x = body_mass_g, y = flipper_length_mm) +
+    geom_point(shape = 21,
+            colour = "blue",
+            fill = "red")+
+  facet_wrap(~species)
+```
+
+
+]
+
+---
+## .fancy[Grammar of Graphics] - Facets 
+
+.leftcol40[
+
+Generates small multiples that each show a different subset of the data
+Alternative to aesthetics for displaying additional categorical/discrete variables
+
+Two `facet_*()` options:
+
+`facet_grid()` and `facet_wrap()`]
+
+.rightcol60[
+
+
+
+```r
+
+g + facet_grid(row = vars(species),
+               cols = vars(year))
+
+```
+
+```{r, echo=FALSE, out.height='170%', out.width='130%', fig.pos="bottom"}
+penguins <- read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv")
+
+library(janitor)
+library(tidyverse)
+penguins %>% 
+clean_names() %>% 
+  mutate(year= format(as.Date(date_egg, format="%Y-%m-%d"),"%Y")) %>% 
+ggplot() +
+  aes(x = body_mass_g, y = flipper_length_mm) +
+    geom_point(shape = 21,
+            colour = "blue",
+            fill = "red")+
+  facet_grid(row = vars(species),
+               cols = vars(year))
+```
+
+
+]
+
+---
+
+## .fancy[Grammar of Graphics] - Facets 
+
+Note that for the previous example I had to use `tidyverse` to create the .fancy[year] variable and then `ggplot2`
+
+```r
+
+penguins <- read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv")
+
+library(janitor)
+library(tidyverse)
+penguins %>% 
+clean_names() %>% 
+  mutate(year= format(as.Date(date_egg, format="%Y-%m-%d"),"%Y")) %>% 
+ggplot() +
+  aes(x = body_mass_g, y = flipper_length_mm) +
+    geom_point(shape = 21,
+            colour = "blue",
+            fill = "red")+
+  facet_grid(row = vars(species),
+               cols = vars(year))
+
+```
+---
+## .fancy[Honorable Mentions] - Labs
+
+.pull-left[
+Labs allow you to change the labels of the plot 
+
+```r
+g +
+  labs(x = "Body Mass (g)",
+       y = "Bill Length (mm)",
+       title = "Palmer Penguins",
+       subtitle = "Bill Length (mm) vs. Body Mass (g)",
+       caption = "Created by Natalia Umansky")
+```
+This is similar to `xlab()` and `ylab()` but contained in one function
+]
+.pull-right[
+
+
+<br>
+
+```{r, echo=FALSE, out.height='170%', out.width='130%', fig.pos="bottom"}
+penguins <- read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv")
+
+library(janitor)
+library(tidyverse)
+penguins %>% 
+clean_names() %>% 
+  mutate(year= format(as.Date(date_egg, format="%Y-%m-%d"),"%Y")) %>% 
+ggplot() +
+  aes(x = body_mass_g, y = flipper_length_mm) +
+    geom_point(shape = 21,
+            colour = "blue",
+            fill = "red")+
+  labs(x = "Body Mass (g)",
+       y = "Bill Length (mm)",
+       title = "Palmer Penguins",
+       subtitle = "Bill Length (mm) vs. Body Mass (g)",
+       caption = "Created by Natalia Umansky")
+```
+]
+
+---
+
+## .fancy[Honorable Mentions] - Themes
+
+.pull-left[
+Control the plot appearance/decorations
+
+
+```r
+g + theme_minimal()
+```
+]
+
+.pull-right[
+```{r, echo=FALSE, out.height='170%', out.width='130%', fig.pos="bottom"}
+penguins <- read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv")
+
+library(janitor)
+library(tidyverse)
+penguins %>% 
+clean_names() %>% 
+  mutate(year= format(as.Date(date_egg, format="%Y-%m-%d"),"%Y")) %>% 
+ggplot() +
+  aes(x = body_mass_g, y = flipper_length_mm) +
+    geom_point(shape = 21,
+            colour = "blue",
+            fill = "red")+
+  theme_minimal()
+```
+]
+---
+
+## .fancy[Honorable Mentions] - Themes
+
+.pull-left[
+You can customize your own `theme()`
+
+.code70[
+```r
+g + 
+  facet_grid(row = vars(species),
+               cols = vars(year)) +
+  theme(
+    plot.background = element_blank(),
+    panel.background = 
+      element_rect(fill = "white"),
+    panel.grid = 
+      element_line(colour = "grey"),
+    strip.background = 
+      element_rect(fill = "black"),
+    strip.text = 
+      element_text(face = "bold",
+                  colour = "white",
+                  size = 13))
+```
+]]
+
+.pull-right[
+
+<br><br>
+
+```{r, echo=FALSE, out.height='170%', out.width='130%', fig.pos="bottom"}
+penguins <- read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv")
+
+library(janitor)
+library(tidyverse)
+penguins %>% 
+clean_names() %>% 
+  mutate(year= format(as.Date(date_egg, format="%Y-%m-%d"),"%Y")) %>% 
+ggplot() +
+  aes(x = body_mass_g, y = flipper_length_mm) +
+    geom_point(shape = 21,
+            colour = "blue",
+            fill = "red")+
+  theme(
+    plot.background = element_blank(),
+    panel.background = 
+      element_rect(fill = "white"),
+    panel.grid = 
+      element_line(colour = "grey"),
+    strip.background = 
+      element_rect(fill = "black"),
+    strip.text = 
+      element_text(face = "bold",
+                  colour = "white",
+                  size = 13))
+```
+]
+
+---
+
+
+class: center, middle, inverse
+
+## Exercise
+
+---
+.pull-left[
+.font150[.fira[Task 8]]
+
+.font60[Create a plot that...
+
+* shows penguin body mass on the `x` axis
+* shows flipper length on the `y` axis
+* uses `sex` as colour for the geometric objects
+* removes NAs
+* is a scatterplot but uses a geometric object that is not the standar circle
+* shows a smoothed line over the scatterplot
+* is faceted by year and species
+* displays nicely formatted labs (i.e., labels, legends, title, and caption)
+* uses `theme_light()`
+]]
+
+.pull-right[
+
+.font150[.fira[Task 9]]
+
+.font60[Install the `ggbeeswarm` package using `install.packages("ggbeeswarm")`
+
+Create a plot that...
+
+* shows penguin species on the `x` axis
+* shows culmen length (mm) on the `y` axis
+* removes NAs
+* uses `geom_boxplot()` to display boxplots with red outlines
+* uses the `ggbeeswarm` and `geom_quasirandom()` to display a scatterplot on top of the boxplots, with an alpha = 0.1 (dot transparency)
+* displays nicely formatted labs (i.e., labels, legends, title, and caption)
+* uses `theme_light()`
+]]
+
+---
+
+class: spoiler
+
+---
+
+###Solution
+
+.pull-left[.code40[
+
+```r
+penguins <- read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv")
+
+library(janitor)
+library(tidyverse)
+penguins %>% 
+clean_names() %>% 
+  mutate(year= format(as.Date(date_egg, format="%Y-%m-%d"),"%Y")) %>% 
+  filter(!is.na(sex)) %>% 
+ggplot() +
+  aes(x = body_mass_g, y = flipper_length_mm) +
+    geom_point(aes(colour=sex),shape = 17)+
+  geom_smooth()+
+  facet_grid(row = vars(species),
+               cols = vars(year))+
+  labs(x = "Body Mass (g)",
+       y = "Bill Length (mm)",
+       title = "Palmer Penguins",
+       legend.title= "Sex",
+       subtitle = "Bill Length (mm) vs. Body Mass (g)",
+       caption = "Created by Natalia Umansky",
+       color='Sex')+
+  theme_light()
+
+```
+
+]]
+
+.pull-right[
+
+```{r, echo=FALSE, out.height='170%', out.width='130%', fig.pos="bottom"}
+penguins <- read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv")
+
+library(janitor)
+library(tidyverse)
+penguins %>% 
+clean_names() %>% 
+  mutate(year= format(as.Date(date_egg, format="%Y-%m-%d"),"%Y")) %>% 
+  filter(!is.na(sex)) %>% 
+  mutate(species= ifelse(species=="Adelie Penguin (Pygoscelis adeliae)", "Adelie", ifelse(species=="Gentoo penguin (Pygoscelis papua)", "Gentoo", "Chinstrap")))  %>% 
+ggplot() +
+  aes(x = body_mass_g, y = flipper_length_mm) +
+    geom_point(aes(colour=sex),shape = 17)+
+  geom_smooth()+
+  facet_grid(row = vars(species),
+               cols = vars(year))+
+  labs(x = "Body Mass (g)",
+       y = "Bill Length (mm)",
+       title = "Palmer Penguins",
+       legend.title= "Sex",
+       subtitle = "Bill Length (mm) vs. Body Mass (g)",
+       caption = "Created by Natalia Umansky",
+       color='Sex')+
+  theme_light()
+```
+
+
+]
+
+---
+###Solution
+
+.pull-left[.code40[
+
+```r
+penguins <- read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv")
+
+library(janitor)
+library(tidyverse)
+library(ggbeeswarm)
+
+penguins %>% 
+  clean_names() %>% 
+  mutate(year= format(as.Date(date_egg, format="%Y-%m-%d"),"%Y")) %>% 
+  filter(!is.na(sex)) %>% 
+  filter(!is.na(culmen_length_mm)) %>% 
+  mutate(species= ifelse(species=="Adelie Penguin (Pygoscelis adeliae)", "Adelie", ifelse(species=="Gentoo penguin (Pygoscelis papua)", "Gentoo", "Chinstrap")))  %>% 
+  ggplot() +
+  aes(x = species, y = culmen_length_mm) +
+  geom_boxplot( colour = "red")+
+  geom_quasirandom(alpha = 0.1)+
+  labs(x = "Species",
+       y = "Culmen Length (mm)",
+       title = "Palmer Penguins",
+       subtitle = "Culmen Length (mm) by penguin species",
+       caption = "Created by Natalia Umansky")+
+  theme_light()
+
+```
+
+]]
+
+.pull-right[
+
+```{r, echo=FALSE, out.height='170%', out.width='130%', fig.pos="bottom"}
+penguins <- read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv")
+
+library(janitor)
+library(tidyverse)
+library(ggbeeswarm)
+
+penguins %>% 
+  clean_names() %>% 
+  mutate(year= format(as.Date(date_egg, format="%Y-%m-%d"),"%Y")) %>% 
+  filter(!is.na(sex)) %>% 
+  filter(!is.na(culmen_length_mm)) %>% 
+  mutate(species= ifelse(species=="Adelie Penguin (Pygoscelis adeliae)", "Adelie", ifelse(species=="Gentoo penguin (Pygoscelis papua)", "Gentoo", "Chinstrap")))  %>% 
+  ggplot() +
+  aes(x = species, y = culmen_length_mm) +
+  geom_boxplot( colour = "red")+
+  geom_quasirandom(alpha = 0.1)+
+  labs(x = "Species",
+       y = "Culmen Length (mm)",
+       title = "Palmer Penguins",
+       subtitle = "Culmen Length (mm) by penguin species",
+       caption = "Created by Natalia Umansky")+
+  theme_light()
+```
+
+
+]
+
+---
+## .fancy[General advice] - Saving plots 
+
+* Save plots as PDF (vector graphic and small size) 
+
+
+```r
+ggsave("boxplot.pdf", my_boxplot, width = 5, height = 7)
+```
+
+---
+
+
+## Sources and Resources
+
+`ggplot2`: elegant graphics for data analysis  
+- 3rd-edition book freely accessible online!
+
+[ggplot2.tidyverse.org](ggplot2.tidyverse.org)  
+- `Tidyverse` reference documentation is A+  
+
+Packages used in this presentation:
+
+```r
+library(palmerpenguins)
+library(dplyr)
+library(ggplot2)
+library(janitor)
+```
+
+---
+
+<center>
+
+.font200[.fancy[Thank you!]
+
+<br>
+
+`r fa(name = "face-smile")`]
+
+</center>
